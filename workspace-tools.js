@@ -8,6 +8,7 @@
   function controls() {
     $('export-backup').disabled = !userId || exporting || window.sbNotes.isBusy() || window.sbProjects.isBusy();
     $('idea-all').disabled = !userId || window.sbNotes.isBusy();
+    $('open-ideas').disabled = $('idea-all').disabled;
     for (const button of $('idea-board-list').querySelectorAll('button')) button.disabled = !userId || window.sbNotes.isBusy();
   }
   function renderIdeas() {
@@ -107,7 +108,9 @@
     visible = value;
     if (entering && userId && !loading) void loadIdeas();
   }
-  $('idea-all').addEventListener('click', () => { if (window.sbNotes.setFilter('ideas')) location.hash = 'ideas'; });
+  function openIdeas() { if (window.sbNotes.setFilter('ideas')) location.hash = 'ideas'; }
+  $('idea-all').addEventListener('click', openIdeas);
+  $('open-ideas').addEventListener('click', openIdeas);
   $('export-backup').addEventListener('click', () => void exportBackup());
   document.addEventListener('sb-notes-busy', controls);
   document.addEventListener('sb-projects-busy', controls);
