@@ -1,18 +1,30 @@
-# Smiling Buddha — yksityiset muistiinpanot
+# Smiling Buddha — projektit ja muistiinpanot
 
-## 1. Luo taulu Supabaseen
+## 1. Päivitä olemassa oleva tietokanta
 
-Avaa oman projektisi SQL Editor. Luo uusi kysely, liitä sb-notes-setup.sql-tiedoston koko sisältö ja paina Run. Koodi luo sb_notes-taulun, käyttöoikeudet, neljä RLS-sääntöä ja versionumeron päivityksen. Aja asennus kerran. Jos taulu on jo olemassa, koodi epäonnistuu turvallisesti eikä poista sitä. Älä poista taulua virheen korjaamiseksi.
+Muistiinpanot ovat jo käytössä. Avaa oman Supabase-projektisi SQL Editor, luo uusi kysely, liitä sb-projects-setup.sql:n koko sisältö ja paina Run. Aja päivitys kerran.
 
-SQL ei lähetä sähköpostia eikä muuta kirjautumisasetuksia. Julkinen rekisteröityminen ja anonyymi kirjautuminen pidetään pois käytöstä.
+Päivitys luo sb_projects-taulun, sen käyttöoikeudet ja versionumeron päivityksen. Se lisää sb_notes-tauluun valinnaisen project_id-sarakkeen. Nykyiset muistiinpanot säilyvät ja löytyvät aluksi ”Ilman projektia” -valinnalla.
+
+ÄLÄ aja sb-notes-setup.sql:ää uudelleen tässä projektissa. Se on mukana vain uuden, tyhjän asennuksen pohjaksi: tyhjässä projektissa ajetaan ensin sb-notes-setup.sql ja sitten sb-projects-setup.sql. Olemassa olevaa taulua ei saa poistaa. Toistettu projektipäivitys epäonnistuu turvallisesti eikä poista tietoja.
 
 ## 2. Päivitä oikea GitHub-repositorio
 
 Käytössä oleva sivusto: Begemotttt/begemotttt.github.io, main-haara, juurihakemisto.
 
-Add file / Upload files: lataa index.html, app.js, style.css, notes.js, notes.css sekä koko assets-kansio. Säilytä nykyinen CNAME ja vanhat kuvat. SQL-tiedoston, build-source-kansion, README:n ja THIRD-PARTY-LICENSES.txt:n voi myös säilyttää repositoriossa. SQL-tiedosto ei sisällä tunnuksia eikä muistiinpanojen sisältöä. GitHub ei suorita sitä: se pitää ajaa Supabasessa erikseen.
+Add file / Upload files: lataa index.html, app.js, style.css, notes.js, projects.js, notes.css sekä koko assets-kansio. Säilytä nykyinen CNAME ja vanhat kuvat. SQL-tiedoston, build-source-kansion, README:n ja THIRD-PARTY-LICENSES.txt:n voi myös säilyttää repositoriossa. SQL-tiedosto ei sisällä tunnuksia eikä muistiinpanojen sisältöä. GitHub ei suorita sitä: se pitää ajaa Supabasessa erikseen.
 
-Päivitä HTML ja molemmat JavaScript-tiedostot samassa commitissa. Vanhasta Supabase-paketista vain app.js:n tai notes.js:n lataaminen ei riitä.
+Päivitä HTML ja kaikki JavaScript-tiedostot samassa commitissa. Vanhasta Supabase-paketista vain app.js:n tai notes.js:n lataaminen ei riitä.
+
+## Projektien käyttö
+
+Avaa Projektit, valitse Uusi, kirjoita nimi ja kuvaus, paina Tallenna. Projektilla on oma ”Avaa projektin muistiinpanot” -painike. Se avaa muistiinpanojen luettelon rajattuna tähän projektiin.
+
+Muistiinpanoeditorissa Projekti-valikko liittää tai siirtää muistiinpanon valittuun projektiin. Valitse ”Ilman projektia”, jos haluat irrottaa liitoksen. Valinnan muutos tallennetaan Tallenna-painikkeella. Muistiinpanojen luettelossa voi näyttää kaikki muistiinpanot, projektin muistiinpanot tai ilman projektia olevat.
+
+Projektin nimi on enintään 200 merkkiä ja kuvaus 5 000 merkkiä. Projektit ja muistiinpanot toimivat samoin: manuaalinen tallennus, version tarkistus, epävarman kirjoituksen lukupohjainen varmennus, poiston vahvistus ja yksityisten tekstien tyhjennys kirjautumisen päättyessä.
+
+Projektia ei voi poistaa, jos siihen on liitetty muistiinpanoja. Siirrä tai irrota muistiinpanot ensin ja tallenna muutokset. Projektin poistaminen ei poista muistiinpanoja.
 
 ## 3. Kokeile
 
@@ -30,17 +42,19 @@ Enimmäispituudet: otsikko 200 merkkiä, teksti 100 000 merkkiä. Sisältö on t
 
 Tallennus ja poisto tarkistavat rivin versionumeron. Toisella laitteella tehtyä uudempaa versiota ei ylikirjoiteta. Ristiriitatilanteessa omat muutokset säilyvät editorissa: kopioi ne tarvittaessa talteen ja lataa palvelimen versio.
 
-Jos tallennuksen tai poiston vastaus katoaa, tulos näytetään epävarmana. Sivu ei toista kirjoitusta automaattisesti. Tarkista tallennuksen tila -painike tekee vain lukupyynnön. Muistiinpanon UUID pysyy samana epäonnistuneen uuden muistiinpanon uudelleenyrityksessä, jotta samaa luontia ei vahingossa monisteta.
+Jos tallennuksen tai poiston vastaus katoaa, tulos näytetään epävarmana. Sivu ei toista kirjoitusta automaattisesti. Tarkista tallennuksen tila -painike tekee vain lukupyynnön. Muistiinpanon tai projektin UUID pysyy samana epäonnistuneen uuden muistiinpanon uudelleenyrityksessä, jotta samaa luontia ei vahingossa monisteta.
 
 ## Käyttöoikeudet
 
-Vain authenticated-rooli saa käyttää taulua. Jokainen SELECT, INSERT, UPDATE ja DELETE rajataan auth.uid() = user_id -säännöllä. Anonyymillä vierailijalla ei ole tauluoikeuksia. Selaimessa on vain publishable-avain; secret/service_role-avainta ei ole. Julkinen sivun lähdekoodi ei sisällä käyttäjän muistiinpanoja. Supabasen ylläpitäjä voi silti nähdä tiedot: tämä ei ole päästä päähän salattu holvi.
+Vain authenticated-rooli saa käyttää taulua. Molemmissa tauluissa jokainen SELECT, INSERT, UPDATE ja DELETE rajataan auth.uid() = user_id -säännöllä. Anonyymillä vierailijalla ei ole tauluoikeuksia. Selaimessa on vain publishable-avain; secret/service_role-avainta ei ole. Julkinen sivun lähdekoodi ei sisällä käyttäjän muistiinpanoja. Supabasen ylläpitäjä voi silti nähdä tiedot: tämä ei ole päästä päähän salattu holvi.
 
 Varmuuskopiointi ja palautusversiot eivät sisälly tähän toteutukseen. Poisto on pysyvä, eikä roskakoria ole.
 
 ## Tarkistukset
 
 Käyttöliittymä testattiin oikealla Supabase SDK:lla ja simuloiduilla API-vastauksilla. Testit kattavat luomisen, muokkauksen, poiston, epävarman kirjoituksen varmennuksen ilman monistamista, versiokonfliktin, verkkovirheen ja kirjautumisen päättymisen myöhäisen vastauksen aikana. SQL suoritettiin eristetyssä PostgreSQL/PGlite-ympäristössä: omat CRUD-operaatiot sallitaan, anonyymi ja toinen käyttäjä estetään, omistajan väärentäminen estetään ja versionumerot toimivat. Oikean Supabase-projektin SQL-asennus ja todellinen käyttäjätesti tehdään yllä kuvatuilla vaiheilla.
+
+Projektipäivityksen testit: PostgreSQL/PGlite varmisti vanhojen muistiinpanojen säilymisen, molempien taulujen käyttöoikeudet, väärän omistajan estämisen, omistajan sisältävän viiteavaimen toiminnan, muistiinpanojen siirtämisen ja projektin poiston estämisen silloin kun siinä on muistiinpanoja. Käyttöliittymä testattiin oikealla SDK:lla ja simuloiduilla vastauksilla: projektien luominen/muokkaus/poisto, epävarman projektitallennuksen varmennus ilman monistamista, muistiinpanojen liittäminen/irrottaminen/rajaaminen sekä vanhan muistiinpanotoiminnon regressiot.
 
 ## SDK ja lisenssit
 

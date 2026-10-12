@@ -109,7 +109,7 @@
     dialog.showModal();
   }
   $('forgot-password').addEventListener('click', () => openDialog('Salasanan palautus', 'Salasanan palautus sivulta ei ole vielä käytössä. Voit hallita omaa käyttäjätiliäsi Supabasen Authentication-osiossa.'));
-  $('privacy-button').addEventListener('click', () => openDialog('Tietosuoja', 'Kirjautumistiedot lähetetään salatun HTTPS-yhteyden kautta Supabaseen. Salasanaa ei tallenneta sivun koodiin tai selaimen tallennustilaan. Supabasen kirjautumisistunto ja teemavalinta tallennetaan selaimen paikalliseen tallennustilaan. Sivu ei käytä analytiikkaa. Muistiinpanot tallennetaan Supabasen tietokantaan ja niitä saa käyttää vain niiden omistaja. Tallentamaton teksti on vain tämän sivun muistissa. Hosting-palvelut voivat käsitellä teknisiä lokitietoja.'));
+  $('privacy-button').addEventListener('click', () => openDialog('Tietosuoja', 'Kirjautumistiedot lähetetään salatun HTTPS-yhteyden kautta Supabaseen. Salasanaa ei tallenneta sivun koodiin tai selaimen tallennustilaan. Supabasen kirjautumisistunto ja teemavalinta tallennetaan selaimen paikalliseen tallennustilaan. Sivu ei käytä analytiikkaa. Projektit ja muistiinpanot tallennetaan Supabasen tietokantaan ja niitä saa käyttää vain niiden omistaja. Tallentamaton teksti on vain tämän sivun muistissa. Hosting-palvelut voivat käsitellä teknisiä lokitietoja.'));
   document.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
   $('dialog-done').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', event => {
@@ -119,20 +119,24 @@
   });
   function renderRoute(focus = false) {
     const notesView = location.hash === '#notes' && isLoggedIn();
-    const preview = (location.hash === '#workspace' || notesView) && isLoggedIn();
+    const projectsView = location.hash === '#projects' && isLoggedIn();
+    const preview = (location.hash === '#workspace' || notesView || projectsView) && isLoggedIn();
     $('entry-panel').hidden = preview;
     $('workspace').hidden = !preview;
-    document.title = notesView ? 'Muistiinpanot · Smiling Buddha' : preview ? 'Oma tila · Smiling Buddha' : 'Kirjaudu sisään · Smiling Buddha';
-    $('workspace-overview').hidden = notesView;
+    document.title = projectsView ? 'Projektit · Smiling Buddha' : notesView ? 'Muistiinpanot · Smiling Buddha' : preview ? 'Oma tila · Smiling Buddha' : 'Kirjaudu sisään · Smiling Buddha';
+    $('workspace-overview').hidden = notesView || projectsView;
+    $('projects-panel').hidden = !projectsView;
+    window.sbProjects.setAuth(client, currentUser);
+    window.sbProjects.setVisible(projectsView);
     $('notes-panel').hidden = !notesView;
     window.sbNotes.setAuth(client, currentUser);
     window.sbNotes.setVisible(notesView);
     if (preview) { password.value = ''; resetPasswordVisibility(); }
     $('signed-in-user').textContent = currentUser?.email || '';
-    if (focus) (notesView ? $('notes-heading') : preview ? $('workspace-heading') : $('login-heading')).focus({preventScroll: true});
+    if (focus) (projectsView ? $('projects-heading') : notesView ? $('notes-heading') : preview ? $('workspace-heading') : $('login-heading')).focus({preventScroll: true});
   }
   $('back-to-login').addEventListener('click', async () => {
-    if (!client || busy || !window.sbNotes.canLeave()) return;
+    if (!client || busy || !window.sbNotes.canLeave() || !window.sbProjects.canLeave()) return;
     busy = true;
     updateControls();
     $('workspace-status').hidden = true;
@@ -155,7 +159,7 @@
 
   function updateControls() {
     $('submit-button').disabled = !ready || busy;
-    $('back-to-login').disabled = !ready || busy || window.sbNotes.isBusy();
+    $('back-to-login').disabled = !ready || busy || window.sbNotes.isBusy() || window.sbProjects.isBusy();
     $('submit-button').querySelector('span').textContent = busy ? 'Odota…' : 'Kirjaudu sisään';
     form.setAttribute('aria-busy', String(busy));
   }
@@ -183,7 +187,7 @@
       // The SDK has now processed confirmation tokens. Do not retain them in the URL.
       if (location.hash.includes('access_token=') || location.hash.includes('error=')) {
         history.replaceState(null, '', location.pathname + location.search + (user ? '#workspace' : ''));
-      } else if (user && location.hash !== '#notes') {
+      } else if (user && location.hash !== '#notes' && location.hash !== '#projects') {
         history.replaceState(null, '', location.pathname + location.search + '#workspace');
       }
       renderRoute();
@@ -237,6 +241,7 @@
     }
   }
   document.addEventListener('sb-notes-busy', updateControls);
+  document.addEventListener('sb-projects-busy', updateControls);
   addEventListener('hashchange', () => renderRoute(true));
   addEventListener('pageshow', event => { if (event.persisted && client) { $('workspace').hidden = true; void restoreSession(); } });
   addEventListener('pagehide', () => { password.value = ''; resetPasswordVisibility(); });

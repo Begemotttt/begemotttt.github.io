@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="notes.css">
   <script src="assets/supabase-client.js" defer></script>
   <script src="notes.js" defer></script>
+  <script src="projects.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -81,17 +82,18 @@
       <div id="workspace-overview">
       <div class="workspace-hero"><p class="eyebrow welcome"><span aria-hidden="true"></span> SMILING BUDDHA</p><h1 id="workspace-heading" tabindex="-1">Kaikki alkaa<br><em>uteliaisuudesta.</em></h1><p>Oma paikka projekteille ja ajatuksille.<br>Muistiinpanosi tallentuvat Supabaseen.</p></div>
       <div class="preview-cards">
-        <article class="preview-card"><span class="card-number">01</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-7 7 7 7m8-14 7 7-7 7M14 3l-4 18"/></svg><h2>Projektit</h2><p>Kokeiluja, koodia ja pieniä oivalluksia.</p><span class="card-caption">TILAA TEKEMISELLE</span></article>
+        <article class="preview-card"><span class="card-number">01</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-7 7 7 7m8-14 7 7-7 7M14 3l-4 18"/></svg><h2>Projektit</h2><p>Kokeiluja, koodia ja pieniä oivalluksia.</p><button id="open-projects" type="button" class="notes-button">Avaa projektit →</button></article>
         <article class="preview-card"><span class="card-number">02</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h10l4 4v14H5V3Zm9 0v5h5M8 12h8m-8 4h6"/></svg><h2>Muistiinpanot</h2><p>Ajatukset talteen ennen kuin ne katoavat.</p><button id="open-notes" type="button" class="notes-button">Avaa muistiinpanot →</button></article>
         <article class="preview-card"><span class="card-number">03</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0c-1 1-1 2-1 2H9s0-1-1-2ZM12 1V0"/></svg><h2>Seuraava idea</h2><p>Jotain, jota ei ole vielä tullut kokeiltua.</p><span class="card-caption">TILAA UUDELLE</span></article>
       </div>
-      <p class="workspace-notice">Muistiinpanot ovat käytössä. Projektit ja seuraava idea ovat vielä esittelyjä.</p>
+      <p class="workspace-notice">Projektit ja muistiinpanot ovat käytössä. Seuraava idea odottaa vielä vuoroaan.</p>
       </div>
       <section id="notes-panel" hidden aria-labelledby="notes-heading">
         <div class="notes-header">
           <div><p class="eyebrow">TILAA AJATTELULLE</p><h1 id="notes-heading" tabindex="-1">Muistiinpanot</h1><p>Ajatukset talteen, yksi kerrallaan.</p></div>
           <button id="notes-back" type="button" class="notes-button">← Oma tila</button>
         </div>
+        <div class="notes-filter"><label for="notes-project-filter">Näytä muistiinpanot</label><select id="notes-project-filter"><option value="all">Kaikki projektit</option><option value="none">Ilman projektia</option></select></div>
         <p id="notes-status" class="form-status" role="status" aria-live="polite" hidden></p>
         <div class="notes-layout">
           <aside class="notes-sidebar" aria-label="Muistiinpanojen luettelo">
@@ -105,10 +107,40 @@
             <form id="note-form" hidden>
               <label for="note-title">Otsikko</label>
               <input id="note-title" name="title" maxlength="200" required autocomplete="off" placeholder="Ajatuksen nimi">
+              <label for="note-project">Projekti</label>
+              <select id="note-project"><option value="">Ilman projektia</option></select>
+              <p class="notes-muted notes-small">Voit siirtää muistiinpanon toiseen projektiin valitsemalla sen ja tallentamalla.</p>
               <label for="note-body">Muistiinpano</label>
               <textarea id="note-body" name="body" maxlength="100000" rows="15" placeholder="Kirjoita tähän…"></textarea>
               <p id="note-state" class="notes-muted" aria-live="polite"></p>
               <div class="notes-editor-actions"><button id="note-save" class="notes-button notes-primary" type="submit">Tallenna</button><button id="note-delete" class="notes-button notes-danger" type="button" hidden>Poista</button><button id="note-reload" class="notes-button" type="button" hidden>Lataa palvelimen versio</button><button id="note-verify" class="notes-button" type="button" hidden>Tarkista tallennuksen tila</button></div>
+              <p class="notes-muted notes-small">Tallennus tapahtuu Tallenna-painikkeesta. Tekstiä ei tallenneta automaattisesti.</p>
+            </form>
+          </div>
+        </div>
+      </section>
+      <section id="projects-panel" hidden aria-labelledby="projects-heading">
+        <div class="notes-header">
+          <div><p class="eyebrow">TILAA TEKEMISELLE</p><h1 id="projects-heading" tabindex="-1">Projektit</h1><p>Omat kansiot tekemiselle ja niihin liittyville muistiinpanoille.</p></div>
+          <button id="projects-back" type="button" class="notes-button">← Oma tila</button>
+        </div>
+        <p id="projects-status" class="form-status" role="status" aria-live="polite" hidden></p>
+        <div class="notes-layout">
+          <aside class="notes-sidebar" aria-label="Projektien luettelo">
+            <div class="notes-toolbar"><button id="projects-new" class="notes-button notes-primary" type="button">+ Uusi</button><button id="projects-refresh" class="notes-button" type="button">Päivitä lista</button></div>
+            <p id="projects-list-info" class="notes-muted"></p>
+            <ul id="projects-list" class="notes-list"></ul>
+            <div class="notes-pagination"><button id="projects-prev" class="notes-button" type="button">Edellinen</button><button id="projects-next" class="notes-button" type="button">Seuraava</button></div>
+          </aside>
+          <div class="notes-editor">
+            <p id="projects-placeholder" class="notes-muted">Valitse projekti tai luo uusi.</p>
+            <form id="project-form" hidden>
+              <label for="project-title">Projektin nimi</label>
+              <input id="project-title" name="title" maxlength="200" required autocomplete="off" placeholder="Projektin nimi">
+              <label for="project-body">Kuvaus</label>
+              <textarea id="project-body" name="body" maxlength="5000" rows="8" placeholder="Kirjoita tähän…"></textarea>
+              <p id="project-state" class="notes-muted" aria-live="polite"></p>
+              <div class="notes-editor-actions"><button id="project-save" class="notes-button notes-primary" type="submit">Tallenna</button><button id="project-open-notes" class="notes-button" type="button" hidden>Avaa projektin muistiinpanot →</button><button id="project-delete" class="notes-button notes-danger" type="button" hidden>Poista</button><button id="project-reload" class="notes-button" type="button" hidden>Lataa palvelimen versio</button><button id="project-verify" class="notes-button" type="button" hidden>Tarkista tallennuksen tila</button></div>
               <p class="notes-muted notes-small">Tallennus tapahtuu Tallenna-painikkeesta. Tekstiä ei tallenneta automaattisesti.</p>
             </form>
           </div>

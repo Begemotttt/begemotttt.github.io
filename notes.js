@@ -3,19 +3,20 @@
   'use strict';
   const $ = id => document.getElementById(id);
   const TABLE = 'sb_notes';
-  const FIELDS = 'id,user_id,title,body,created_at,updated_at,row_revision';
+  const FIELDS = 'id,user_id,title,body,project_id,created_at,updated_at,row_revision';
   const PAGE_SIZE = 50;
   let client = null, userId = null, generation = 0;
   let visible = false, listed = false, working = false;
   let page = 0, total = 0, rows = [];
   let selected = null, draftId = null, baseline = null;
   let pending = null, conflict = false;
+  let activeFilter = 'all', projectOptions = [], optionsPromise = null, optionsGeneration = 0;
 
   function message(text) { $('notes-status').textContent = text; $('notes-status').hidden = !text; }
-  function values() { return { title: $('note-title').value.trim(), body: $('note-body').value }; }
+  function values() { return { title: $('note-title').value.trim(), body: $('note-body').value, project_id: $('note-project').value || null }; }
   function dirty() {
     if (!baseline || $('note-form').hidden) return false;
-    return $('note-title').value !== baseline.title || $('note-body').value !== baseline.body;
+    return $('note-title').value !== baseline.title || $('note-body').value !== baseline.body || ($('note-project').value || null) !== baseline.project_id;
   }
   function canLeave() {
     if (working) { message('Odota, että meneillään oleva toiminto valmistuu.'); return false; }
@@ -43,6 +44,8 @@
     $('note-verify').disabled = !userId || working;
     $('note-title').disabled = locked;
     $('note-body').disabled = locked;
+    $('note-project').disabled = locked;
+    $('notes-project-filter').disabled = locked;
     for (const button of $('notes-list').querySelectorAll('button')) button.disabled = locked;
     $('note-form').setAttribute('aria-busy', String(working));
     if (pending) $('note-state').textContent = 'Tulos epävarma. Teksti on tässä tallessa. Tarkista tila ennen jatkamista.';
@@ -51,12 +54,13 @@
   }
   function clearEditor() {
     selected = null; draftId = null; baseline = null; pending = null; conflict = false;
-    $('note-title').value = ''; $('note-body').value = ''; $('note-state').textContent = '';
+    $('note-title').value = ''; $('note-body').value = ''; $('note-state').textContent = ''; $('note-project').value = '';
     $('note-form').hidden = true; $('notes-placeholder').hidden = false;
   }
   function fillEditor(row) {
     selected = row; draftId = row.id; conflict = false;
-    baseline = { title: row.title, body: row.body };
+    baseline = { title: row.title, body: row.body, project_id: row.project_id || null };
+    populateProjects(row.project_id || '');
     $('note-title').value = row.title; $('note-body').value = row.body;
     $('note-form').hidden = false; $('notes-placeholder').hidden = true;
     renderList(); controls();
@@ -69,9 +73,11 @@
       button.type = 'button'; button.className = 'note-list-button';
       button.setAttribute('aria-current', String(selected?.id === row.id));
       const title = document.createElement('span'); title.className = 'note-list-title'; title.textContent = row.title;
+      const project = document.createElement('span'); project.className = 'note-list-date';
+      project.textContent = row.project_id ? projectOptions.find(p => p.id === row.project_id)?.title || 'Projekti' : 'Ilman projektia';
       const date = document.createElement('span'); date.className = 'note-list-date';
       date.textContent = new Date(row.updated_at).toLocaleString('fi-FI', { dateStyle: 'short', timeStyle: 'short' });
-      button.append(title, date); button.addEventListener('click', () => void openNote(row.id));
+      button.append(title, project, date); button.addEventListener('click', () => void openNote(row.id));
       li.append(button); $('notes-list').append(li);
     }
     $('notes-list-info').textContent = !listed ? 'Luettelo ei ole vielä käytettävissä.' : total === 0 ? 'Ei vielä muistiinpanoja.' : `${page * PAGE_SIZE + 1}–${Math.min((page + 1) * PAGE_SIZE, total)} / ${total} muistiinpanoa`;
@@ -87,6 +93,8 @@
     } finally { clearTimeout(timeout); }
   }
   function problem(error) {
+    if (error?.code === '42703') return 'Projektien tietokantapäivitys puuttuu. Aja sb-projects-setup.sql ja päivitä lista.';
+    if (error?.code === '23503') return 'Valittua projektia ei enää ole tai se ei kuulu sinulle. Tarkista tallennuksen tila ja valitse toinen projekti.';
     if (['42P01', 'PGRST205'].includes(error?.code)) return 'Muistiinpanotaulua ei löydy. Aja paketin sb-notes-setup.sql Supabasen SQL Editorissa ja päivitä lista.';
     if (error?.code === '42501') return 'Tietokannan käyttöoikeudet eivät salli toimintoa. Tarkista, että asennuksen SQL-koodi on ajettu kokonaan.';
     return 'Supabaseen ei saatu yhteyttä tai pyyntö epäonnistui. Tarkista verkkoyhteys ja projektin tila.';
@@ -97,8 +105,12 @@
     setWorking(true);
     if (announce) message('Ladataan muistiinpanoja…');
     try {
-      let result = await request(client.from(TABLE).select('id,user_id,title,created_at,updated_at,row_revision', { count: 'exact' })
-        .eq('user_id', owner).order('updated_at', { ascending: false }).order('id').range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1));
+      await refreshProjectOptions(true);
+      if (!valid(ticket, owner)) return;
+      let query = client.from(TABLE).select('id,user_id,title,project_id,created_at,updated_at,row_revision', { count: 'exact' }).eq('user_id', owner);
+      if (activeFilter === 'none') query = query.is('project_id', null);
+      else if (activeFilter !== 'all') query = query.eq('project_id', activeFilter);
+      const result = await request(query.order('updated_at', { ascending: false }).order('id').range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1));
       if (!valid(ticket, owner)) return;
       if (!Array.isArray(result.data) || typeof result.count !== 'number') throw new Error('Invalid response');
       total = result.count; rows = result.data; listed = true;
@@ -126,7 +138,8 @@
   }
   function newNote() {
     if (!userId || !listed || !canLeave()) return;
-    clearEditor(); draftId = crypto.randomUUID(); baseline = { title: '', body: '' };
+    clearEditor(); draftId = crypto.randomUUID(); baseline = { title: '', body: '', project_id: activeFilter !== 'all' && activeFilter !== 'none' ? activeFilter : null };
+    populateProjects(baseline.project_id || '');
     $('note-form').hidden = false; $('notes-placeholder').hidden = true;
     message(''); renderList(); controls(); $('note-title').focus();
   }
@@ -134,7 +147,7 @@
     conflict = true;
     message('Muistiinpano muuttui tai poistettiin toisella laitteella. Muutoksiasi ei kirjoitettu vanhan version päälle. Teksti säilyy editorissa.');
   }
-  function samePayload(row, operation) { return row && row.title === operation.payload.title && row.body === operation.payload.body; }
+  function samePayload(row, operation) { return row && row.title === operation.payload.title && row.body === operation.payload.body && (row.project_id || null) === operation.payload.project_id; }
   async function saveNote(event) {
     event.preventDefault();
     if (!userId || working || pending || conflict || !dirty()) return;
@@ -214,6 +227,8 @@
     if (id === userId) return;
     generation++; userId = id; working = false;
     rows = []; page = 0; total = 0; listed = false;
+    activeFilter = 'all'; projectOptions = []; optionsPromise = null; optionsGeneration++;
+    populateProjects('');
     clearEditor(); message(''); renderList();
     document.dispatchEvent(new CustomEvent('sb-notes-busy'));
     if (id && visible) void loadList();
@@ -235,10 +250,49 @@
   $('note-reload').addEventListener('click', () => {
     if (selected && canLeave()) void openNote(selected.id, true);
   });
-  for (const id of ['note-title', 'note-body']) $(id).addEventListener('input', controls);
+  for (const id of ['note-title', 'note-body', 'note-project']) $(id).addEventListener('input', controls);
   addEventListener('beforeunload', event => {
     if (dirty() || working || pending) { event.preventDefault(); event.returnValue = ''; }
   });
-  window.sbNotes = { setAuth, setVisible, canLeave, isBusy: () => working || Boolean(pending) };
+  function option(value, text) { const element = document.createElement('option'); element.value = value; element.textContent = text; return element; }
+  function populateProjects(chosen = $('note-project').value) {
+    const picker = $('note-project'), filter = $('notes-project-filter');
+    picker.replaceChildren(option('', 'Ilman projektia'));
+    filter.replaceChildren(option('all', 'Kaikki projektit'), option('none', 'Ilman projektia'));
+    for (const project of projectOptions) { picker.append(option(project.id, project.title)); filter.append(option(project.id, project.title)); }
+    if (chosen && !projectOptions.some(p => p.id === chosen)) picker.append(option(chosen, 'Nykyinen projekti (ei luettelossa)'));
+    if (activeFilter !== 'all' && activeFilter !== 'none' && !projectOptions.some(p => p.id === activeFilter)) filter.append(option(activeFilter, 'Valittu projekti (ei luettelossa)'));
+    picker.value = chosen; filter.value = activeFilter;
+  }
+  async function refreshProjectOptions(quiet = false) {
+    if (!userId || !window.sbProjects) return;
+    if (optionsPromise) return optionsPromise;
+    const ticket = generation, owner = userId, attempt = ++optionsGeneration;
+    optionsPromise = (async () => {
+      try {
+        const result = await window.sbProjects.getOptions();
+        if (!valid(ticket, owner) || attempt !== optionsGeneration) return;
+        projectOptions = result; populateProjects(); renderList();
+      } catch (error) {
+        if (valid(ticket, owner) && !quiet) message(problem(error));
+      } finally { if (attempt === optionsGeneration) optionsPromise = null; }
+    })();
+    return optionsPromise;
+  }
+  function setFilter(value) {
+    if (!canLeave()) return false;
+    clearEditor(); activeFilter = value || 'all'; page = 0; listed = false;
+    rows = []; total = 0; populateProjects(''); renderList();
+    if (visible) void loadList();
+    return true;
+  }
+  $('notes-project-filter').addEventListener('change', event => {
+    const previous = activeFilter;
+    if (!setFilter(event.target.value)) event.target.value = previous;
+  });
+  document.addEventListener('sb-projects-changed', () => {
+    if (userId) void refreshProjectOptions();
+  });
+  window.sbNotes = { setAuth, setVisible, canLeave, setFilter, isBusy: () => working || Boolean(pending) };
   renderList(); controls();
 })();

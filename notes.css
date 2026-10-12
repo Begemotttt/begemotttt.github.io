@@ -31,3 +31,9 @@
 .preview-card .notes-button { margin-top:5px; }
 @media(max-width:850px) { .notes-layout { grid-template-columns:210px minmax(0,1fr); } .notes-editor { padding:20px; } .notes-sidebar { padding:15px; } }
 @media(max-width:680px) { .notes-header { align-items:flex-start; flex-direction:column; margin-top:28px; } .notes-header h1 { font-size:32px; } .notes-layout { grid-template-columns:1fr; } .notes-sidebar { border-right:0; border-bottom:1px solid var(--line); } .notes-list { max-height:220px; overflow-y:auto; } .notes-editor input,.notes-editor textarea { font-size:16px; } }
+
+.notes-filter { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:0 0 18px; }
+.notes-filter label { font-size:12px; color:var(--muted); }
+.notes-filter select,.notes-editor select { font:inherit; color:var(--text); background:var(--input); border:1px solid var(--line); border-radius:6px; padding:11px; max-width:100%; }
+.notes-editor select { width:100%; margin-bottom:5px; }
+@media(max-width:680px) { .notes-filter select,.notes-editor select { font-size:16px; } }
