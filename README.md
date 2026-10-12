@@ -64,7 +64,7 @@ Inter-fontin lisenssi: assets/Inter-OFL.txt. SDK ja riippuvuudet: THIRD-PARTY-LI
 
 ## Idealista ja Markdown
 
-Idealista näkyy etusivulla otsikkotekstien vieressä, puhelimessa niiden alla. Se näyttää kymmenen viimeksi päivitetyn idean otsikot ilman erillistä korttia. Otsikko avaa Ideat-osion ja valitun idean muokattavaksi. Uusi idea avaa editorin valmiiksi merkittynä ideaksi; kirjoita otsikko ja sisältö ja paina Tallenna. Kaikki ideat avaa Ideat-osion.
+Ideoita-lista näkyy etusivulla otsikkotekstien vieressä, puhelimessa niiden alla. Se näyttää kymmenen viimeksi päivitetyn idean otsikot ilman erillistä korttia. Otsikko avaa Ideat-osion ja valitun idean muokattavaksi. Ideat-osiossa Uusi avaa editorin valmiiksi merkittynä ideaksi; kirjoita otsikko ja sisältö ja paina Tallenna. Seuraava idea -kortin Avaa ideat avaa Ideat-osion.
 
 Myös olemassa olevan muistiinpanon voi merkitä valinnalla ”Näytä idealistassa” ja tallentaa. Idean voi liittää projektiin. Muokkaa / Esikatselu vaihtaa näkymää. Lataa .md tallentaa editorin nykyisen otsikon ja tekstin Markdown-tiedostoon, myös tallentamattomat muutokset. Palvelimella ideat ovat samoja muistiinpanoja, eivät erillisiä tiedostoliitteitä.
 

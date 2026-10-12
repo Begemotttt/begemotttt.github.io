@@ -7,8 +7,6 @@
   const valid = (ticket, owner) => generation === ticket && userId === owner;
   function controls() {
     $('export-backup').disabled = !userId || exporting || window.sbNotes.isBusy() || window.sbProjects.isBusy();
-    $('idea-refresh').disabled = !userId || loading;
-    $('idea-new').disabled = !userId || window.sbNotes.isBusy();
     $('idea-all').disabled = !userId || window.sbNotes.isBusy();
     for (const button of $('idea-board-list').querySelectorAll('button')) button.disabled = !userId || window.sbNotes.isBusy();
   }
@@ -109,8 +107,6 @@
     visible = value;
     if (entering && userId && !loading) void loadIdeas();
   }
-  $('idea-refresh').addEventListener('click', () => void loadIdeas());
-  $('idea-new').addEventListener('click', () => void window.sbNotes.newIdea());
   $('idea-all').addEventListener('click', () => { if (window.sbNotes.setFilter('ideas')) location.hash = 'ideas'; });
   $('export-backup').addEventListener('click', () => void exportBackup());
   document.addEventListener('sb-notes-busy', controls);
