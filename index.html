@@ -11,7 +11,9 @@
   <title>Kirjaudu sisään · Smiling Buddha</title>
   <link rel="icon" href="assets/symbol.png" type="image/png">
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="notes.css">
   <script src="assets/supabase-client.js" defer></script>
+  <script src="notes.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -76,13 +78,42 @@
     <main class="workspace" id="workspace" hidden aria-labelledby="workspace-heading">
       <div class="workspace-top"><span class="eyebrow">OMA TILA</span><button class="text-button" id="back-to-login" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg> Kirjaudu ulos</button></div>
       <p id="signed-in-user"></p><p id="workspace-status" role="alert" hidden></p>
-      <div class="workspace-hero"><p class="eyebrow welcome"><span aria-hidden="true"></span> SMILING BUDDHA</p><h1 id="workspace-heading" tabindex="-1">Kaikki alkaa<br><em>uteliaisuudesta.</em></h1><p>Tähän voi myöhemmin rakentaa oman työtilan:<br>projektit, muistiinpanot ja seuraavat ideat.</p></div>
+      <div id="workspace-overview">
+      <div class="workspace-hero"><p class="eyebrow welcome"><span aria-hidden="true"></span> SMILING BUDDHA</p><h1 id="workspace-heading" tabindex="-1">Kaikki alkaa<br><em>uteliaisuudesta.</em></h1><p>Oma paikka projekteille ja ajatuksille.<br>Muistiinpanosi tallentuvat Supabaseen.</p></div>
       <div class="preview-cards">
         <article class="preview-card"><span class="card-number">01</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-7 7 7 7m8-14 7 7-7 7M14 3l-4 18"/></svg><h2>Projektit</h2><p>Kokeiluja, koodia ja pieniä oivalluksia.</p><span class="card-caption">TILAA TEKEMISELLE</span></article>
-        <article class="preview-card"><span class="card-number">02</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h10l4 4v14H5V3Zm9 0v5h5M8 12h8m-8 4h6"/></svg><h2>Muistiinpanot</h2><p>Ajatukset talteen ennen kuin ne katoavat.</p><span class="card-caption">TILAA AJATTELULLE</span></article>
+        <article class="preview-card"><span class="card-number">02</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h10l4 4v14H5V3Zm9 0v5h5M8 12h8m-8 4h6"/></svg><h2>Muistiinpanot</h2><p>Ajatukset talteen ennen kuin ne katoavat.</p><button id="open-notes" type="button" class="notes-button">Avaa muistiinpanot →</button></article>
         <article class="preview-card"><span class="card-number">03</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0c-1 1-1 2-1 2H9s0-1-1-2ZM12 1V0"/></svg><h2>Seuraava idea</h2><p>Jotain, jota ei ole vielä tullut kokeiltua.</p><span class="card-caption">TILAA UUDELLE</span></article>
       </div>
-      <p class="workspace-notice">Kirjautuminen on yhdistetty Supabaseen. Työtilan kortit ovat vielä esittelyjä. Yksityisten tietojen tallennus lisätään erikseen.</p>
+      <p class="workspace-notice">Muistiinpanot ovat käytössä. Projektit ja seuraava idea ovat vielä esittelyjä.</p>
+      </div>
+      <section id="notes-panel" hidden aria-labelledby="notes-heading">
+        <div class="notes-header">
+          <div><p class="eyebrow">TILAA AJATTELULLE</p><h1 id="notes-heading" tabindex="-1">Muistiinpanot</h1><p>Ajatukset talteen, yksi kerrallaan.</p></div>
+          <button id="notes-back" type="button" class="notes-button">← Oma tila</button>
+        </div>
+        <p id="notes-status" class="form-status" role="status" aria-live="polite" hidden></p>
+        <div class="notes-layout">
+          <aside class="notes-sidebar" aria-label="Muistiinpanojen luettelo">
+            <div class="notes-toolbar"><button id="notes-new" class="notes-button notes-primary" type="button">+ Uusi</button><button id="notes-refresh" class="notes-button" type="button">Päivitä lista</button></div>
+            <p id="notes-list-info" class="notes-muted"></p>
+            <ul id="notes-list" class="notes-list"></ul>
+            <div class="notes-pagination"><button id="notes-prev" class="notes-button" type="button">Edellinen</button><button id="notes-next" class="notes-button" type="button">Seuraava</button></div>
+          </aside>
+          <div class="notes-editor">
+            <p id="notes-placeholder" class="notes-muted">Valitse muistiinpano tai luo uusi.</p>
+            <form id="note-form" hidden>
+              <label for="note-title">Otsikko</label>
+              <input id="note-title" name="title" maxlength="200" required autocomplete="off" placeholder="Ajatuksen nimi">
+              <label for="note-body">Muistiinpano</label>
+              <textarea id="note-body" name="body" maxlength="100000" rows="15" placeholder="Kirjoita tähän…"></textarea>
+              <p id="note-state" class="notes-muted" aria-live="polite"></p>
+              <div class="notes-editor-actions"><button id="note-save" class="notes-button notes-primary" type="submit">Tallenna</button><button id="note-delete" class="notes-button notes-danger" type="button" hidden>Poista</button><button id="note-reload" class="notes-button" type="button" hidden>Lataa palvelimen versio</button><button id="note-verify" class="notes-button" type="button" hidden>Tarkista tallennuksen tila</button></div>
+              <p class="notes-muted notes-small">Tallennus tapahtuu Tallenna-painikkeesta. Tekstiä ei tallenneta automaattisesti.</p>
+            </form>
+          </div>
+        </div>
+      </section>
     </main>
 
     <footer class="site-footer"><p>© <span id="year">2026</span> Smiling Buddha</p><span class="footer-line" aria-hidden="true"></span><button type="button" class="text-button" id="privacy-button">Tietosuoja</button></footer>

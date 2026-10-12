@@ -109,7 +109,7 @@
     dialog.showModal();
   }
   $('forgot-password').addEventListener('click', () => openDialog('Salasanan palautus', 'Salasanan palautus sivulta ei ole vielä käytössä. Voit hallita omaa käyttäjätiliäsi Supabasen Authentication-osiossa.'));
-  $('privacy-button').addEventListener('click', () => openDialog('Tietosuoja', 'Kirjautumistiedot lähetetään salatun HTTPS-yhteyden kautta Supabaseen. Salasanaa ei tallenneta sivun koodiin tai selaimen tallennustilaan. Supabasen kirjautumisistunto ja teemavalinta tallennetaan selaimen paikalliseen tallennustilaan. Sivu ei käytä analytiikkaa. Hosting-palvelut voivat käsitellä teknisiä lokitietoja.'));
+  $('privacy-button').addEventListener('click', () => openDialog('Tietosuoja', 'Kirjautumistiedot lähetetään salatun HTTPS-yhteyden kautta Supabaseen. Salasanaa ei tallenneta sivun koodiin tai selaimen tallennustilaan. Supabasen kirjautumisistunto ja teemavalinta tallennetaan selaimen paikalliseen tallennustilaan. Sivu ei käytä analytiikkaa. Muistiinpanot tallennetaan Supabasen tietokantaan ja niitä saa käyttää vain niiden omistaja. Tallentamaton teksti on vain tämän sivun muistissa. Hosting-palvelut voivat käsitellä teknisiä lokitietoja.'));
   document.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
   $('dialog-done').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', event => {
@@ -118,16 +118,21 @@
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
   });
   function renderRoute(focus = false) {
-    const preview = location.hash === '#workspace' && isLoggedIn();
+    const notesView = location.hash === '#notes' && isLoggedIn();
+    const preview = (location.hash === '#workspace' || notesView) && isLoggedIn();
     $('entry-panel').hidden = preview;
     $('workspace').hidden = !preview;
-    document.title = preview ? 'Oma tila · Smiling Buddha' : 'Kirjaudu sisään · Smiling Buddha';
+    document.title = notesView ? 'Muistiinpanot · Smiling Buddha' : preview ? 'Oma tila · Smiling Buddha' : 'Kirjaudu sisään · Smiling Buddha';
+    $('workspace-overview').hidden = notesView;
+    $('notes-panel').hidden = !notesView;
+    window.sbNotes.setAuth(client, currentUser);
+    window.sbNotes.setVisible(notesView);
     if (preview) { password.value = ''; resetPasswordVisibility(); }
     $('signed-in-user').textContent = currentUser?.email || '';
-    if (focus) (preview ? $('workspace-heading') : $('login-heading')).focus({preventScroll: true});
+    if (focus) (notesView ? $('notes-heading') : preview ? $('workspace-heading') : $('login-heading')).focus({preventScroll: true});
   }
   $('back-to-login').addEventListener('click', async () => {
-    if (!client || busy) return;
+    if (!client || busy || !window.sbNotes.canLeave()) return;
     busy = true;
     updateControls();
     $('workspace-status').hidden = true;
@@ -150,7 +155,7 @@
 
   function updateControls() {
     $('submit-button').disabled = !ready || busy;
-    $('back-to-login').disabled = !ready || busy;
+    $('back-to-login').disabled = !ready || busy || window.sbNotes.isBusy();
     $('submit-button').querySelector('span').textContent = busy ? 'Odota…' : 'Kirjaudu sisään';
     form.setAttribute('aria-busy', String(busy));
   }
@@ -162,9 +167,11 @@
   }
   async function restoreSession() {
     const ticket = ++revision;
+    let candidateId = null;
     try {
       const { data, error } = await client.auth.getSession();
       if (error) throw error;
+      candidateId = data.session?.user?.id || null;
       let user = null;
       if (data.session) {
         const result = await client.auth.getUser();
@@ -176,17 +183,28 @@
       // The SDK has now processed confirmation tokens. Do not retain them in the URL.
       if (location.hash.includes('access_token=') || location.hash.includes('error=')) {
         history.replaceState(null, '', location.pathname + location.search + (user ? '#workspace' : ''));
-      } else if (user) {
+      } else if (user && location.hash !== '#notes') {
         history.replaceState(null, '', location.pathname + location.search + '#workspace');
       }
       renderRoute();
       status.hidden = true;
+      $('workspace-status').hidden = true;
     } catch (error) {
       if (ticket !== revision) return;
-      currentUser = null;
-      renderRoute();
-      status.textContent = authMessage(error);
-      status.hidden = false;
+      const sameKnownUser = currentUser && candidateId === currentUser.id;
+      const expired = [401, 403].includes(error?.status) || ['bad_jwt', 'session_not_found', 'refresh_token_not_found'].includes(error?.code);
+      if (sameKnownUser && !expired) {
+        // A temporary verification failure must not erase an unsaved editor.
+        // The database still enforces the access token and RLS on every request.
+        renderRoute();
+        $('workspace-status').textContent = 'Kirjautumistilan tarkistus epäonnistui. Tarkista verkkoyhteys. Tallentamattomat muutokset säilyvät tässä näkymässä.';
+        $('workspace-status').hidden = false;
+      } else {
+        currentUser = null;
+        renderRoute();
+        status.textContent = authMessage(error);
+        status.hidden = false;
+      }
     } finally {
       ready = true;
       updateControls();
@@ -218,8 +236,9 @@
       status.hidden = false;
     }
   }
+  document.addEventListener('sb-notes-busy', updateControls);
   addEventListener('hashchange', () => renderRoute(true));
-  addEventListener('pageshow', event => { if (event.persisted && client) { currentUser = null; renderRoute(); void restoreSession(); } });
+  addEventListener('pageshow', event => { if (event.persisted && client) { $('workspace').hidden = true; void restoreSession(); } });
   addEventListener('pagehide', () => { password.value = ''; resetPasswordVisibility(); });
   renderRoute();
   void initializeAuth();
