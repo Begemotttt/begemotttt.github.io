@@ -11,11 +11,13 @@
   <title>Kirjaudu sisään · Smiling Buddha</title>
   <link rel="icon" href="assets/symbol.png" type="image/png">
   <link rel="stylesheet" href="style.css?v=5105b6ba62fb">
-  <link rel="stylesheet" href="notes.css?v=756f8de03018">
+  <link rel="stylesheet" href="notes.css?v=1bee342cb624">
   <script src="assets/supabase-client.js?v=769a2efacef1" defer></script>
-  <script src="notes.js?v=243ca6c03890" defer></script>
-  <script src="projects.js?v=e8a627391506" defer></script>
-  <script src="app.js?v=c85091fb5510" defer></script>
+  <script src="assets/markdown.js?v=eb077e53a6d4" defer></script>
+  <script src="notes.js?v=4841a7ae7a1a" defer></script>
+  <script src="projects.js?v=3da02d7ede0a" defer></script>
+  <script src="workspace-tools.js?v=bf590ea6bb19" defer></script>
+  <script src="app.js?v=3cf14f3ab383" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#login-heading">Siirry kirjautumiseen</a>
@@ -77,16 +79,25 @@
     </main>
 
     <main class="workspace" id="workspace" hidden aria-labelledby="workspace-heading">
-      <div class="workspace-top"><span class="eyebrow">OMA TILA</span><button class="text-button" id="back-to-login" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg> Kirjaudu ulos</button></div>
+      <div class="workspace-top"><span class="eyebrow">OMA TILA</span><div class="workspace-actions"><button id="export-backup" type="button" class="notes-button">Lataa varmuuskopio</button><button class="text-button" id="back-to-login" type="button"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m6-6-6 6 6 6"/></svg> Kirjaudu ulos</button></div></div>
       <p id="signed-in-user"></p><p id="workspace-status" role="alert" hidden></p>
       <div id="workspace-overview">
+      <div class="workspace-welcome">
       <div class="workspace-hero"><p class="eyebrow welcome"><span aria-hidden="true"></span> SMILING BUDDHA</p><h1 id="workspace-heading" tabindex="-1">Kaikki alkaa<br><em>uteliaisuudesta.</em></h1><p>Oma paikka projekteille ja ajatuksille.<br>Muistiinpanosi tallentuvat Supabaseen.</p></div>
+      <aside id="idea-board" class="idea-board" aria-labelledby="idea-board-heading">
+        <div class="idea-board-top"><div><p class="eyebrow">AJATUKSET TALTEEN</p><h2 id="idea-board-heading">Seuraavat ideat</h2></div><button id="idea-refresh" type="button" class="text-button">Päivitä</button></div>
+        <p id="idea-board-status" class="notes-muted" role="status" aria-live="polite"></p>
+        <ul id="idea-board-list" class="idea-board-list"></ul>
+        <div class="notes-toolbar"><button id="idea-new" type="button" class="notes-button notes-primary">+ Uusi idea</button><button id="idea-all" type="button" class="notes-button">Kaikki ideat →</button></div>
+        <p class="notes-muted notes-small">Otsikko avaa Markdown-esikatselun. Näytetään 10 viimeksi muokattua ideaa.</p>
+      </aside>
+      </div>
       <div class="preview-cards">
         <article class="preview-card"><span class="card-number">01</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5-7 7 7 7m8-14 7 7-7 7M14 3l-4 18"/></svg><h2>Projektit</h2><p>Kokeiluja, koodia ja pieniä oivalluksia.</p><button id="open-projects" type="button" class="notes-button">Avaa projektit →</button></article>
         <article class="preview-card"><span class="card-number">02</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h10l4 4v14H5V3Zm9 0v5h5M8 12h8m-8 4h6"/></svg><h2>Muistiinpanot</h2><p>Ajatukset talteen ennen kuin ne katoavat.</p><button id="open-notes" type="button" class="notes-button">Avaa muistiinpanot →</button></article>
-        <article class="preview-card"><span class="card-number">03</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0c-1 1-1 2-1 2H9s0-1-1-2ZM12 1V0"/></svg><h2>Seuraava idea</h2><p>Jotain, jota ei ole vielä tullut kokeiltua.</p><span class="card-caption">TILAA UUDELLE</span></article>
+        <article class="preview-card"><span class="card-number">03</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18h6m-5 3h4M8 14a6 6 0 1 1 8 0c-1 1-1 2-1 2H9s0-1-1-2ZM12 1V0"/></svg><h2>Seuraava idea</h2><p>Jotain, jota ei ole vielä tullut kokeiltua.</p><button id="idea-new-card" type="button" class="notes-button">Kirjoita idea →</button></article>
       </div>
-      <p class="workspace-notice">Projektit ja muistiinpanot ovat käytössä. Seuraava idea odottaa vielä vuoroaan.</p>
+      <p class="workspace-notice">Varmuuskopio sisältää Supabaseen tallennetut projektit ja muistiinpanot. Tallentamattomat muutokset eivät sisälly vientiin.</p>
       </div>
       <section id="notes-panel" hidden aria-labelledby="notes-heading">
         <div class="notes-header">
@@ -110,8 +121,11 @@
               <label for="note-project">Projekti</label>
               <select id="note-project"><option value="">Ilman projektia</option></select>
               <p class="notes-muted notes-small">Voit siirtää muistiinpanon toiseen projektiin valitsemalla sen ja tallentamalla.</p>
-              <label for="note-body">Muistiinpano</label>
-              <textarea id="note-body" name="body" maxlength="100000" rows="15" placeholder="Kirjoita tähän…"></textarea>
+              <label class="idea-checkbox" for="note-is-idea"><input id="note-is-idea" type="checkbox"> Näytä idealistassa</label>
+              <div class="markdown-toolbar"><button id="note-edit-tab" type="button" class="notes-button" aria-pressed="true">Muokkaa</button><button id="note-preview-tab" type="button" class="notes-button" aria-pressed="false">Esikatselu</button><button id="note-download-md" type="button" class="notes-button">Lataa .md</button></div>
+              <div id="note-edit-pane"><label for="note-body">Muistiinpano (Markdown)</label>
+              <textarea id="note-body" name="body" maxlength="100000" rows="15" placeholder="Kirjoita tähän…"></textarea></div>
+              <div id="note-preview" class="markdown-preview" role="region" aria-label="Muistiinpanon Markdown-esikatselu" hidden></div>
               <p id="note-state" class="notes-muted" aria-live="polite"></p>
               <div class="notes-editor-actions"><button id="note-save" class="notes-button notes-primary" type="submit">Tallenna</button><button id="note-delete" class="notes-button notes-danger" type="button" hidden>Poista</button><button id="note-reload" class="notes-button" type="button" hidden>Lataa palvelimen versio</button><button id="note-verify" class="notes-button" type="button" hidden>Tarkista tallennuksen tila</button></div>
               <p class="notes-muted notes-small">Tallennus tapahtuu Tallenna-painikkeesta. Tekstiä ei tallenneta automaattisesti.</p>

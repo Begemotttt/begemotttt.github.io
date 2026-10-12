@@ -131,12 +131,14 @@
     $('notes-panel').hidden = !notesView;
     window.sbNotes.setAuth(client, currentUser);
     window.sbNotes.setVisible(notesView);
+    window.sbWorkspaceTools.setAuth(client, currentUser);
+    window.sbWorkspaceTools.setVisible(preview && !notesView && !projectsView);
     if (preview) { password.value = ''; resetPasswordVisibility(); }
     $('signed-in-user').textContent = currentUser?.email || '';
     if (focus) (projectsView ? $('projects-heading') : notesView ? $('notes-heading') : preview ? $('workspace-heading') : $('login-heading')).focus({preventScroll: true});
   }
   $('back-to-login').addEventListener('click', async () => {
-    if (!client || busy || !window.sbNotes.canLeave() || !window.sbProjects.canLeave()) return;
+    if (!client || busy || window.sbWorkspaceTools.isBusy() || !window.sbNotes.canLeave() || !window.sbProjects.canLeave()) return;
     busy = true;
     updateControls();
     $('workspace-status').hidden = true;
@@ -159,7 +161,7 @@
 
   function updateControls() {
     $('submit-button').disabled = !ready || busy;
-    $('back-to-login').disabled = !ready || busy || window.sbNotes.isBusy() || window.sbProjects.isBusy();
+    $('back-to-login').disabled = !ready || busy || window.sbNotes.isBusy() || window.sbProjects.isBusy() || window.sbWorkspaceTools.isBusy();
     $('submit-button').querySelector('span').textContent = busy ? 'Odota…' : 'Kirjaudu sisään';
     form.setAttribute('aria-busy', String(busy));
   }
@@ -242,6 +244,7 @@
   }
   document.addEventListener('sb-notes-busy', updateControls);
   document.addEventListener('sb-projects-busy', updateControls);
+  document.addEventListener('sb-tools-busy', updateControls);
   addEventListener('hashchange', () => renderRoute(true));
   addEventListener('pageshow', event => { if (event.persisted && client) { $('workspace').hidden = true; void restoreSession(); } });
   addEventListener('pagehide', () => { password.value = ''; resetPasswordVisibility(); });

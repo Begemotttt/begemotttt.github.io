@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "dompurify": "^3.4.17",
+    "esbuild": "^0.28.2",
+    "marked": "^18.1.1"
+  }
+}

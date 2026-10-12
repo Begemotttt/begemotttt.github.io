@@ -267,6 +267,6 @@
   $('project-open-notes').addEventListener('click', () => {
     if (selected && canLeave() && window.sbNotes.setFilter(selected.id)) location.hash = 'notes';
   });
-  window.sbProjects = { setAuth, setVisible, canLeave, getOptions, isBusy: () => working || Boolean(pending) };
+  window.sbProjects = { setAuth, setVisible, canLeave, getOptions, isDirty: dirty, isBusy: () => working || Boolean(pending) };
   renderList(); controls();
 })();
