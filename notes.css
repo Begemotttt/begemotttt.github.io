@@ -64,3 +64,7 @@
 .markdown-preview td,.markdown-preview th { border:1px solid var(--line); padding:7px 10px; }
 @media(max-width:850px) { .workspace-welcome { grid-template-columns:1fr; gap:15px; } }
 @media(max-width:680px) { .workspace-actions { gap:15px; } .idea-board { padding:19px; } .workspace-welcome { padding-top:15px; } }
+
+.idea-board { background:none; border:0; border-radius:0; padding:0; }
+.preview-cards { grid-template-columns:repeat(2,minmax(0,1fr)); }
+@media(max-width:680px) { .preview-cards { grid-template-columns:1fr; } .idea-board { padding:0; } }

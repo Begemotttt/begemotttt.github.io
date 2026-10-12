@@ -118,18 +118,22 @@
     if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dialog.close();
   });
   function renderRoute(focus = false) {
-    const notesView = location.hash === '#notes' && isLoggedIn();
+    const ideasView = location.hash === '#ideas' && isLoggedIn();
+    const notesView = (location.hash === '#notes' || ideasView) && isLoggedIn();
     const projectsView = location.hash === '#projects' && isLoggedIn();
     const preview = (location.hash === '#workspace' || notesView || projectsView) && isLoggedIn();
     $('entry-panel').hidden = preview;
     $('workspace').hidden = !preview;
-    document.title = projectsView ? 'Projektit · Smiling Buddha' : notesView ? 'Muistiinpanot · Smiling Buddha' : preview ? 'Oma tila · Smiling Buddha' : 'Kirjaudu sisään · Smiling Buddha';
+    document.title = projectsView ? 'Projektit · Smiling Buddha' : ideasView ? 'Ideat · Smiling Buddha' : notesView ? 'Muistiinpanot · Smiling Buddha' : preview ? 'Oma tila · Smiling Buddha' : 'Kirjaudu sisään · Smiling Buddha';
     $('workspace-overview').hidden = notesView || projectsView;
     $('projects-panel').hidden = !projectsView;
     window.sbProjects.setAuth(client, currentUser);
     window.sbProjects.setVisible(projectsView);
     $('notes-panel').hidden = !notesView;
     window.sbNotes.setAuth(client, currentUser);
+    if (ideasView && $('notes-project-filter').value !== 'ideas') window.sbNotes.setFilter('ideas');
+    $('notes-heading').textContent = ideasView ? 'Ideat' : 'Muistiinpanot';
+    $('notes-project-filter').closest('.notes-filter').hidden = ideasView;
     window.sbNotes.setVisible(notesView);
     window.sbWorkspaceTools.setAuth(client, currentUser);
     window.sbWorkspaceTools.setVisible(preview && !notesView && !projectsView);
@@ -189,7 +193,7 @@
       // The SDK has now processed confirmation tokens. Do not retain them in the URL.
       if (location.hash.includes('access_token=') || location.hash.includes('error=')) {
         history.replaceState(null, '', location.pathname + location.search + (user ? '#workspace' : ''));
-      } else if (user && location.hash !== '#notes' && location.hash !== '#projects') {
+      } else if (user && location.hash !== '#notes' && location.hash !== '#ideas' && location.hash !== '#projects') {
         history.replaceState(null, '', location.pathname + location.search + '#workspace');
       }
       renderRoute();

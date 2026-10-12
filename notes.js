@@ -247,7 +247,7 @@
     visible = value;
     if (entering && userId && !listed && !working) void loadList();
   }
-  $('open-notes').addEventListener('click', () => { location.hash = 'notes'; });
+  $('open-notes').addEventListener('click', () => { if (setFilter('all')) location.hash = 'notes'; });
   $('notes-back').addEventListener('click', () => { if (canLeave()) location.hash = 'workspace'; });
   $('notes-new').addEventListener('click', newNote);
   $('notes-refresh').addEventListener('click', () => void loadList());
@@ -267,7 +267,7 @@
   function populateProjects(chosen = $('note-project').value) {
     const picker = $('note-project'), filter = $('notes-project-filter');
     picker.replaceChildren(option('', 'Ilman projektia'));
-    filter.replaceChildren(option('all', 'Kaikki projektit'), option('none', 'Ilman projektia'), option('ideas', 'Idealista'));
+    filter.replaceChildren(option('all', 'Kaikki projektit'), option('none', 'Ilman projektia'), option('ideas', 'Ideat'));
     for (const project of projectOptions) { picker.append(option(project.id, project.title)); filter.append(option(project.id, project.title)); }
     if (chosen && !projectOptions.some(p => p.id === chosen)) picker.append(option(chosen, 'Nykyinen projekti (ei luettelossa)'));
     if (activeFilter !== 'all' && activeFilter !== 'none' && activeFilter !== 'ideas' && !projectOptions.some(p => p.id === activeFilter)) filter.append(option(activeFilter, 'Valittu projekti (ei luettelossa)'));
@@ -318,10 +318,10 @@
     if (!userId || !canLeave()) return;
     const ticket = generation, owner = userId;
     clearEditor(); activeFilter = 'ideas'; page = 0; listed = false; rows = []; total = 0;
-    populateProjects(''); renderList(); location.hash = 'notes';
+    populateProjects(''); renderList(); location.hash = 'ideas';
     await loadList();
     if (!valid(ticket, owner) || working || !listed) return;
-    if (id) await openNote(id, true, true);
+    if (id) await openNote(id, true, false);
     else newNote();
   }
   function downloadMarkdown() {

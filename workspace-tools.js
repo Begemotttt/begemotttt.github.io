@@ -9,7 +9,6 @@
     $('export-backup').disabled = !userId || exporting || window.sbNotes.isBusy() || window.sbProjects.isBusy();
     $('idea-refresh').disabled = !userId || loading;
     $('idea-new').disabled = !userId || window.sbNotes.isBusy();
-    $('idea-new-card').disabled = $('idea-new').disabled;
     $('idea-all').disabled = !userId || window.sbNotes.isBusy();
     for (const button of $('idea-board-list').querySelectorAll('button')) button.disabled = !userId || window.sbNotes.isBusy();
   }
@@ -112,8 +111,7 @@
   }
   $('idea-refresh').addEventListener('click', () => void loadIdeas());
   $('idea-new').addEventListener('click', () => void window.sbNotes.newIdea());
-  $('idea-new-card').addEventListener('click', () => void window.sbNotes.newIdea());
-  $('idea-all').addEventListener('click', () => { if (window.sbNotes.setFilter('ideas')) location.hash = 'notes'; });
+  $('idea-all').addEventListener('click', () => { if (window.sbNotes.setFilter('ideas')) location.hash = 'ideas'; });
   $('export-backup').addEventListener('click', () => void exportBackup());
   document.addEventListener('sb-notes-busy', controls);
   document.addEventListener('sb-projects-busy', controls);

@@ -64,7 +64,7 @@ Inter-fontin lisenssi: assets/Inter-OFL.txt. SDK ja riippuvuudet: THIRD-PARTY-LI
 
 ## Idealista ja Markdown
 
-Idealista näkyy etusivulla otsikkotekstien vieressä, puhelimessa niiden alla. Se näyttää kymmenen viimeksi päivitetyn idean otsikot. Otsikko avaa muistiinpanon Markdown-esikatselun. Uusi idea avaa editorin valmiiksi merkittynä ideaksi; kirjoita otsikko ja sisältö ja paina Tallenna. Kaikki ideat avaa koko idealistan.
+Idealista näkyy etusivulla otsikkotekstien vieressä, puhelimessa niiden alla. Se näyttää kymmenen viimeksi päivitetyn idean otsikot ilman erillistä korttia. Otsikko avaa Ideat-osion ja valitun idean muokattavaksi. Uusi idea avaa editorin valmiiksi merkittynä ideaksi; kirjoita otsikko ja sisältö ja paina Tallenna. Kaikki ideat avaa Ideat-osion.
 
 Myös olemassa olevan muistiinpanon voi merkitä valinnalla ”Näytä idealistassa” ja tallentaa. Idean voi liittää projektiin. Muokkaa / Esikatselu vaihtaa näkymää. Lataa .md tallentaa editorin nykyisen otsikon ja tekstin Markdown-tiedostoon, myös tallentamattomat muutokset. Palvelimella ideat ovat samoja muistiinpanoja, eivät erillisiä tiedostoliitteitä.
 
@@ -85,3 +85,5 @@ Marked 18.1.1 ja DOMPurify 3.4.17 ovat paikallisessa assets/markdown.js-tiedosto
 ## Välimuistipäivitys
 
 HTML käyttää CSS- ja JavaScript-tiedostoille sisältöön perustuvia versiotunnisteita. Lataa kaikki päivityksen tiedostot samassa commitissa, odota Pages-julkaisua ja päivitä sivu tarvittaessa Ctrl+Shift+R.
+
+Tämä ulkoasu- ja navigointikorjaus ei tarvitse uutta SQL-päivitystä, jos sb-ideas-backup-setup.sql on jo ajettu.
